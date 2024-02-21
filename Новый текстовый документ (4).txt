@@ -1,0 +1,33 @@
+async Task<string> DownloadStringWithRetries(HttpClient client, string uri)
+{
+ // Повторить попытку через 1 секунду, потом через 2 и через 4 секунды.
+    TimeSpan nextDelay = TimeSpan.FromSeconds(1);
+    for (int i = 0; i != 3; ++i)
+    {
+        try
+        {
+            return await client.GetStringAsync(uri);
+        }
+        catch
+        {
+        }
+        await Task.Delay(nextDelay);
+        nextDelay = nextDelay + nextDelay;
+    }
+    // Попробовать в последний раз и разрешить распространение ошибки.
+    return await client.GetStringAsync(uri);
+}
+
+HttpClient c = new HttpClient();
+string uri = "http://www.mail.ru/index.html";
+Task<string> t = DownloadStringWithRetries(c, uri);
+Console.WriteLine("Downloading {0}...", uri);
+try
+{
+    string s = await t;
+    Console.WriteLine("Got message:{0}", s);
+}
+catch (System.Net.Http.HttpRequestException x)
+{
+    Console.WriteLine("Exception occured, details: {0}", x.ToString());
+}
